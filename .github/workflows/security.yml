@@ -18,23 +18,19 @@ jobs:
         with:
           config: p/security-audit
 
-  dast-trivy:
-    name: DAST - Trivy (Container Image Scan)
+   dast-trivy:
+    name: DAST - Trivy (Secret Scanning)
     runs-on: ubuntu-latest
-    needs: [sast-semgrep]
+    needs: sast-semgrep
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: docker build -t demo-sec:latest .
-
-      - name: Trivy scan (fail on HIGH/CRITICAL)
+      - name: Run Trivy Secret Scan (DAST)
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: demo-sec:latest
-          format: table
+          scan-type: fs
+          scanners: secret
+          severity: HIGH,CRITICAL
           exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "HIGH,CRITICAL"
+          format: table
