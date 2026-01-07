@@ -9,15 +9,12 @@ jobs:
       - run:
           name: Install Semgrep
           command: |
-            python --version
-            pip --version
             pip install --upgrade pip
             pip install semgrep
       - run:
           name: Run Semgrep (SAST)
           command: |
             semgrep --version
-            # Escanea el repo actual (.) con reglas de seguridad
             semgrep scan --config p/security-audit --error .
 
   dast_trivy:
@@ -26,18 +23,27 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+
       - run:
           name: Build Docker image
           command: |
             docker build -t demo-sec:latest .
+
+      - run:
+          name: Install Trivy
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y wget
+            wget -qO- https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+            echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
+            sudo apt-get update
+            sudo apt-get install -y trivy
+            trivy --version
+
       - run:
           name: Trivy scan (DAST)
           command: |
-            docker run --rm aquasec/trivy:latest image \
-              --severity HIGH,CRITICAL \
-              --ignore-unfixed \
-              --exit-code 1 \
-              demo-sec:latest
+            trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 demo-sec:latest
 
 workflows:
   security_pipeline:
