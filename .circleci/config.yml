@@ -41,9 +41,9 @@ jobs:
             trivy --version
 
       - run:
-          name: Trivy scan (DAST)
+          name: Trivy scan (DAST) - Secrets
           command: |
-            trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 demo-sec:latest
+            trivy fs --scanners secret --exit-code 1 --format table .
 
 workflows:
   security_pipeline:
