@@ -10,15 +10,17 @@ jobs:
     name: SAST - Semgrep
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Semgrep (security-audit rules)
+      - name: Run Semgrep (SAST)
         uses: returntocorp/semgrep-action@v1
         with:
           config: p/security-audit
+        env:
+          SEMGREP_APP_TOKEN: ""
 
-   dast-trivy:
+  dast-trivy:
     name: DAST - Trivy (Secret Scanning)
     runs-on: ubuntu-latest
     needs: sast-semgrep
