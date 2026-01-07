@@ -1,0 +1,45 @@
+version: 2.1
+
+jobs:
+  sast_semgrep:
+    docker:
+      - image: cimg/node:20.11
+    steps:
+      - checkout
+      - run:
+          name: Run Semgrep (SAST)
+          command: |
+            python3 -m pip install --upgrade pip
+            pip3 install semgrep
+            semgrep --version
+            semgrep --config p/security-audit --error
+
+  dast_trivy:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker image
+          command: |
+            docker build -t demo-sec:latest .
+      - run:
+          name: Trivy scan (DAST)
+          command: |
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$PWD:/work" \
+              aquasec/trivy:latest image \
+              --severity HIGH,CRITICAL \
+              --ignore-unfixed \
+              --exit-code 1 \
+              demo-sec:latest
+
+workflows:
+  security_pipeline:
+    jobs:
+      - sast_semgrep
+      - dast_trivy:
+          requires:
+            - sast_semgrep
