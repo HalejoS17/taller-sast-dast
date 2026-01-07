@@ -3,14 +3,22 @@ version: 2.1
 jobs:
   sast_semgrep:
     docker:
-      - image: returntocorp/semgrep:latest
+      - image: cimg/python:3.12
     steps:
       - checkout
+      - run:
+          name: Install Semgrep
+          command: |
+            python --version
+            pip --version
+            pip install --upgrade pip
+            pip install semgrep
       - run:
           name: Run Semgrep (SAST)
           command: |
             semgrep --version
-            semgrep --config p/security-audit --error
+            # Escanea el repo actual (.) con reglas de seguridad
+            semgrep scan --config p/security-audit --error .
 
   dast_trivy:
     docker:
@@ -25,8 +33,7 @@ jobs:
       - run:
           name: Trivy scan (DAST)
           command: |
-            docker run --rm \
-              aquasec/trivy:latest image \
+            docker run --rm aquasec/trivy:latest image \
               --severity HIGH,CRITICAL \
               --ignore-unfixed \
               --exit-code 1 \
