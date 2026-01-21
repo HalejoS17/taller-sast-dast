@@ -13,12 +13,12 @@ const httpRequestsTotal = new client.Counter({
   labelNames: ["method", "route", "status"],
 });
 
+// Middleware para contar requests
 app.use((req, res, next) => {
   res.on("finish", () => {
-    const route = req.path || "unknown";
     httpRequestsTotal.inc({
       method: req.method,
-      route,
+      route: req.path,
       status: String(res.statusCode),
     });
   });
