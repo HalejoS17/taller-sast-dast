@@ -5,6 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
 
+# Permisos necesarios para subir SARIF a "Security"
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   sast_semgrep:
     name: SAST - Semgrep (SARIF Report)
@@ -13,23 +19,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Semgrep -> SARIF
-        uses: returntocorp/semgrep-action@v1
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          config: p/security-audit
-          generateSarif: "1"
+          python-version: "3.11"
 
-      - name: Save Semgrep SARIF
+      - name: Install Semgrep
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep
+
+      - name: Run Semgrep -> SARIF
         run: |
           mkdir -p reports
-          cp semgrep.sarif reports/semgrep.sarif
+          semgrep scan --config p/security-audit --sarif --output reports/semgrep.sarif .
 
+      # Subir SARIF a GitHub Security (solo en push, para evitar bloqueos en PR)
       - name: Upload Semgrep SARIF to GitHub Security
+        if: github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/semgrep.sarif
 
-      - name: Upload reports artifact (Semgrep)
+      - name: Upload Semgrep report artifact
         uses: actions/upload-artifact@v4
         with:
           name: reports-semgrep
@@ -43,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Trivy FS Secrets -> JSON + SARIF
+      - name: Trivy Secret Scan -> SARIF (fails on findings)
         uses: aquasecurity/trivy-action@0.24.0
         with:
           scan-type: fs
@@ -52,18 +64,13 @@ jobs:
           output: reports/trivy-secrets.sarif
           exit-code: "1"
 
-      - name: Trivy FS Secrets -> JSON (extra)
-        run: |
-          mkdir -p reports
-          docker run --rm -v "$PWD:/work" -w /work aquasec/trivy:latest fs \
-            --scanners secret --format json --output reports/trivy-secrets.json .
-
       - name: Upload Trivy SARIF to GitHub Security
+        if: github.event_name == 'push'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/trivy-secrets.sarif
 
-      - name: Upload reports artifact (Trivy)
+      - name: Upload Trivy reports artifact
         uses: actions/upload-artifact@v4
         with:
           name: reports-trivy
