@@ -54,6 +54,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Prepare reports folder
+        run: mkdir -p reports
 
       - name: Trivy Secret Scan -> SARIF (fails on findings)
         uses: aquasecurity/trivy-action@0.24.0
