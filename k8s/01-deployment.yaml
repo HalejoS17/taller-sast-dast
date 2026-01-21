@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: taller-app
+  namespace: taller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taller-app
+  template:
+    metadata:
+      labels:
+        app: taller-app
+    spec:
+      containers:
+        - name: app
+          image: taller-app:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000

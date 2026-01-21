@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: taller-app-monitor
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: taller-app
+  namespaceSelector:
+    matchNames:
+      - taller
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
